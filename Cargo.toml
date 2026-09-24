@@ -1,0 +1,39 @@
+[package]
+name = "restie"
+version = "0.1.0"
+edition = "2021"
+description = "RESTie - A transparent RESTful API client CLI"
+license = "MIT"
+repository = "https://github.com/samxxu/restie"
+homepage = "https://github.com/samxxu/restie"
+keywords = ["cli", "api", "openapi", "rest", "http"]
+categories = ["command-line-utilities", "api-bindings"]
+authors = ["Sam Xu <samxxu@gmail.com>"]
+
+[dependencies]
+# `socks` so a SOCKS proxy exported in the environment (ALL_PROXY / HTTPS_PROXY
+# = socks5h://...) actually works; without it reqwest cannot parse such a proxy
+# and every request fails with an opaque "error sending request".
+reqwest = { version = "0.12", features = ["json", "socks"], default-features = false }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+tokio = { version = "1.0", features = ["full"] }
+clap = { version = "4.5", features = ["derive"] }
+base64 = "0.22"
+
+[features]
+default = ["rustls-tls"]
+rustls-tls = ["reqwest/rustls-tls"]
+native-tls = ["reqwest/native-tls"]
+
+[lib]
+name = "restie"
+path = "src/lib.rs"
+
+[[bin]]
+name = "restie"
+path = "src/main.rs"
+
+[dev-dependencies]
+mockito = "1.0"
