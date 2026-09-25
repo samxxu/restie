@@ -37,7 +37,8 @@ pub const MIN_SCHEMA_VERSION: u32 = 1;
 /// so RESTie needs no git binary and no credentials. Overridable per invocation
 /// with `restie presets update --repo <url>` or globally with the
 /// `RESTIE_PRESETS_REPO` environment variable.
-pub const DEFAULT_PRESETS_REPO: &str = "https://raw.githubusercontent.com/samxxu/restie-presets/main";
+pub const DEFAULT_PRESETS_REPO: &str =
+    "https://raw.githubusercontent.com/samxxu/restie-presets/main";
 
 // -----------------------------------------------------------------------------
 // Catalog schema
@@ -209,12 +210,10 @@ fn validate_script_path(owner: &str, command: &str) -> Result<(), String> {
 /// and it must never be able to point RESTie at an arbitrary executable.
 fn validate_auth(preset: &str, auth: &AuthConfig) -> Result<(), String> {
     if auth.auth_type == "script" {
-        let command = auth.command.as_deref().ok_or_else(|| {
-            format!(
-                "preset '{}' uses script auth but has no 'command'",
-                preset
-            )
-        })?;
+        let command = auth
+            .command
+            .as_deref()
+            .ok_or_else(|| format!("preset '{}' uses script auth but has no 'command'", preset))?;
         validate_script_path(preset, command)?;
     }
 
@@ -498,12 +497,10 @@ fn resolve_repo_base(repo: Option<&str>) -> Result<String, String> {
     if !DEFAULT_PRESETS_REPO.trim().is_empty() {
         return Ok(DEFAULT_PRESETS_REPO.trim().to_string());
     }
-    Err(
-        "presets repository URL is not configured.\n\
+    Err("presets repository URL is not configured.\n\
          Pass `restie presets update --repo <raw-base-url>` or set the \
          RESTIE_PRESETS_REPO environment variable."
-            .to_string(),
-    )
+        .to_string())
 }
 
 /// The repository that `presets update` (and the first-run bootstrap) would use
@@ -630,9 +627,7 @@ async fn fetch_raw(client: &reqwest::Client, url: &str) -> Result<String, String
     if !resp.status().is_success() {
         return Err(format!("HTTP {} from {}", resp.status(), url));
     }
-    resp.text()
-        .await
-        .map_err(|e| describe_body_error(url, &e))
+    resp.text().await.map_err(|e| describe_body_error(url, &e))
 }
 
 /// Body-level counterpart to `describe_network_error`. A transfer that starts but
@@ -952,7 +947,11 @@ presets:
       command: auth/x.sh
 "#;
         let err = parse_catalog(yaml).unwrap_err();
-        assert!(err.contains("base_url must be an http(s) URL"), "got: {}", err);
+        assert!(
+            err.contains("base_url must be an http(s) URL"),
+            "got: {}",
+            err
+        );
     }
 
     #[test]
@@ -1119,8 +1118,14 @@ presets:
         let catalog = parse_catalog(LOOKUP_FIXTURE).unwrap();
         let list = preset_list_in(&catalog);
         assert_eq!(list.len(), 2);
-        assert_eq!(list.get("github").map(String::as_str), Some("GitHub REST API"));
-        assert_eq!(list.get("gitlab").map(String::as_str), Some("GitLab API v4"));
+        assert_eq!(
+            list.get("github").map(String::as_str),
+            Some("GitHub REST API")
+        );
+        assert_eq!(
+            list.get("gitlab").map(String::as_str),
+            Some("GitLab API v4")
+        );
     }
 
     #[test]
@@ -1131,7 +1136,10 @@ presets:
     #[test]
     fn test_github_preset_has_bearer_auth() {
         let catalog = parse_catalog(LOOKUP_FIXTURE).unwrap();
-        let auth = find_preset_in(&catalog, "github").unwrap().default_auth.unwrap();
+        let auth = find_preset_in(&catalog, "github")
+            .unwrap()
+            .default_auth
+            .unwrap();
         assert_eq!(auth.auth_type, "bearer_token");
         assert_eq!(auth.token_env, Some("GITHUB_TOKEN".to_string()));
     }
@@ -1139,7 +1147,10 @@ presets:
     #[test]
     fn test_gitlab_preset_has_custom_header() {
         let catalog = parse_catalog(LOOKUP_FIXTURE).unwrap();
-        let auth = find_preset_in(&catalog, "gitlab").unwrap().default_auth.unwrap();
+        let auth = find_preset_in(&catalog, "gitlab")
+            .unwrap()
+            .default_auth
+            .unwrap();
         assert_eq!(auth.auth_type, "custom_header");
         assert_eq!(auth.header, Some("PRIVATE-TOKEN".to_string()));
     }
@@ -1201,12 +1212,21 @@ presets:
                 .default_auth
                 .as_ref()
                 .unwrap_or_else(|| panic!("preset '{}' lost its auth", name));
-            assert_eq!(auth.auth_type, "script", "preset '{}' must be script-auth", name);
+            assert_eq!(
+                auth.auth_type, "script",
+                "preset '{}' must be script-auth",
+                name
+            );
             let base = p
                 .base_url
                 .as_deref()
                 .unwrap_or_else(|| panic!("preset '{}' must define a base_url", name));
-            assert!(base.starts_with("https://"), "preset '{}' base_url: {}", name, base);
+            assert!(
+                base.starts_with("https://"),
+                "preset '{}' base_url: {}",
+                name,
+                base
+            );
         }
     }
 
@@ -1339,8 +1359,14 @@ presets:
         let dir = std::env::temp_dir().join(format!("restie-stage-test-{}", std::process::id()));
         let cached = dir.join("presets");
         let staged = vec![
-            ("auth/aliyun-sign.sh".to_string(), "script-one\n".to_string()),
-            ("auth/tencent-sign.sh".to_string(), "script-two\n".to_string()),
+            (
+                "auth/aliyun-sign.sh".to_string(),
+                "script-one\n".to_string(),
+            ),
+            (
+                "auth/tencent-sign.sh".to_string(),
+                "script-two\n".to_string(),
+            ),
         ];
         stage_catalog(&cached, "schema_version: 1\npresets: []\n", &staged).unwrap();
 
@@ -1383,7 +1409,10 @@ presets:
 
         // The override replaced the base entry wholesale.
         assert_eq!(merged.presets[0].display_name, "GitHub (patched)");
-        assert_eq!(merged.presets[0].openapi_url, "https://example.com/gh-v2.json");
+        assert_eq!(
+            merged.presets[0].openapi_url,
+            "https://example.com/gh-v2.json"
+        );
 
         // An untouched base entry survives verbatim.
         assert_eq!(merged.presets[1].description, "base stripe");
@@ -1407,17 +1436,22 @@ presets:
 
     #[test]
     fn test_merge_catalog_unions_and_sorts_scripts() {
-        let base =
-            parse_catalog("schema_version: 1\nscripts:\n  - auth/a.sh\n  - auth/shared.sh\npresets: []\n")
-                .unwrap();
-        let overlay =
-            parse_catalog("schema_version: 1\nscripts:\n  - auth/shared.sh\n  - auth/b.sh\npresets: []\n")
-                .unwrap();
+        let base = parse_catalog(
+            "schema_version: 1\nscripts:\n  - auth/a.sh\n  - auth/shared.sh\npresets: []\n",
+        )
+        .unwrap();
+        let overlay = parse_catalog(
+            "schema_version: 1\nscripts:\n  - auth/shared.sh\n  - auth/b.sh\npresets: []\n",
+        )
+        .unwrap();
 
         let merged = merge_catalog(&base, &overlay);
         // Union, deduplicated and sorted — a script named by either layer is
         // still fetched by `presets update`.
-        assert_eq!(merged.scripts, vec!["auth/a.sh", "auth/b.sh", "auth/shared.sh"]);
+        assert_eq!(
+            merged.scripts,
+            vec!["auth/a.sh", "auth/b.sh", "auth/shared.sh"]
+        );
     }
 
     #[test]
@@ -1436,14 +1470,20 @@ presets:
 
         let bad = dir.join("catalog.local.yaml");
         std::fs::write(&bad, "schema_version: 99\npresets: []\n").unwrap();
-        assert!(load_catalog_file(&bad).is_none(), "newer schema must be rejected");
+        assert!(
+            load_catalog_file(&bad).is_none(),
+            "newer schema must be rejected"
+        );
 
         std::fs::write(
             &bad,
             "schema_version: 1\npresets:\n  - name: evil\n    display_name: E\n    openapi_url: https://e.com/a.json\n    description: d\n    auth:\n      type: script\n      command: /tmp/evil.sh\n",
         )
         .unwrap();
-        assert!(load_catalog_file(&bad).is_none(), "unsafe script path must be rejected");
+        assert!(
+            load_catalog_file(&bad).is_none(),
+            "unsafe script path must be rejected"
+        );
 
         std::fs::write(&bad, "schema_version: 1\npresets: []\n").unwrap();
         assert!(load_catalog_file(&bad).is_some(), "a valid override loads");
@@ -1455,7 +1495,8 @@ presets:
     fn test_stage_catalog_leaves_local_override_untouched() {
         // The whole point of layer 1: a `presets update` refresh must not touch
         // catalog.local.yaml, so user presets survive every update.
-        let dir = std::env::temp_dir().join(format!("restie-stage-override-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("restie-stage-override-{}", std::process::id()));
         let cached = dir.join("presets");
         std::fs::create_dir_all(&cached).unwrap();
 
@@ -1509,7 +1550,10 @@ presets:
 
     /// Minimal single-threaded HTTP server that serves a fixed file map, used to
     /// test the network path of `presets update` without any external service.
-    fn serve_fixture_repo(listener: std::net::TcpListener, files: Vec<(&'static str, &'static str)>) {
+    fn serve_fixture_repo(
+        listener: std::net::TcpListener,
+        files: Vec<(&'static str, &'static str)>,
+    ) {
         use std::io::{Read, Write};
         for stream in listener.incoming() {
             let Ok(mut s) = stream else { continue };

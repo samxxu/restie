@@ -65,13 +65,9 @@ pub fn generate_config(
                     .map(|s| s.to_string())
                     .unwrap_or_else(|| "misc".to_string());
 
-                let operation_id = operation["operationId"]
-                    .as_str()
-                    .map(|s| s.to_string());
+                let operation_id = operation["operationId"].as_str().map(|s| s.to_string());
 
-                let summary = operation["summary"]
-                    .as_str()
-                    .map(|s| s.to_string());
+                let summary = operation["summary"].as_str().map(|s| s.to_string());
 
                 // Primary command name from summary, stripping the module word.
                 // Fallback (computed once and reused for aliases) is derived
@@ -119,11 +115,11 @@ pub fn generate_config(
                 };
 
                 // Insert into module, handle name collisions
-                let mod_cfg = modules.entry(module_name.clone()).or_insert_with(|| {
-                    ModuleConfig {
+                let mod_cfg = modules
+                    .entry(module_name.clone())
+                    .or_insert_with(|| ModuleConfig {
                         commands: BTreeMap::new(),
-                    }
-                });
+                    });
 
                 let mut final_name = primary_name.clone();
                 let mut counter = 2;
@@ -193,7 +189,11 @@ fn summary_to_command_name(summary: &str, module: &str) -> String {
     }
 
     // Remove articles
-    let words: Vec<&str> = words.iter().filter(|w| !articles.contains(w)).copied().collect();
+    let words: Vec<&str> = words
+        .iter()
+        .filter(|w| !articles.contains(w))
+        .copied()
+        .collect();
 
     // Simplify nouns: singular/plural forms
     let words: Vec<String> = words
@@ -211,10 +211,7 @@ fn summary_to_command_name(summary: &str, module: &str) -> String {
     // Strip module word(s) and their variants from the command name.
     // Module "repos" should strip: repos, repo, repositories, repository
     // Module "issues" should strip: issues, issue
-    let module_variants: Vec<String> = module
-        .split('-')
-        .flat_map(word_variants)
-        .collect();
+    let module_variants: Vec<String> = module.split('-').flat_map(word_variants).collect();
     let words: Vec<String> = words
         .iter()
         .filter(|w| !module_variants.iter().any(|mv| mv.as_str() == w.as_str()))
@@ -283,9 +280,7 @@ fn strip_module_prefix(operation_id: &str, module: &str) -> String {
 
 /// Fallback: derive command name from method+path when no operationId.
 fn derive_fallback_name(method: &str, path: &str) -> String {
-    let path_clean = path
-        .trim_start_matches('/')
-        .replace(['{', '}'], "");
+    let path_clean = path.trim_start_matches('/').replace(['{', '}'], "");
     format!("{}-{}", method.to_lowercase(), path_clean.replace('/', "-"))
 }
 
@@ -321,9 +316,7 @@ fn extract_params(
 
         let location = param["in"].as_str().unwrap_or("query").to_string();
         let required = param["required"].as_bool().unwrap_or(false);
-        let description = param["description"]
-            .as_str()
-            .map(|s| s.to_string());
+        let description = param["description"].as_str().map(|s| s.to_string());
         // Resolve schema-level $ref so type/default survive component references.
         let schema = if let Some(r) = param["schema"]["$ref"].as_str() {
             resolve_ref(spec, r)
@@ -419,11 +412,7 @@ fn extract_body_params(
 
     let required_fields: Vec<&str> = schema["required"]
         .as_array()
-        .map(|arr| {
-            arr.iter()
-                .filter_map(|v| v.as_str())
-                .collect()
-        })
+        .map(|arr| arr.iter().filter_map(|v| v.as_str()).collect())
         .unwrap_or_default();
 
     for (name, prop_schema) in props {
@@ -647,7 +636,9 @@ mod tests {
         assert!(get_ep.aliases.contains(&"repos/get".to_string()));
 
         let create_ep = repos.commands.get("create-mine").unwrap();
-        assert!(create_ep.aliases.contains(&"repos/create-for-authenticated-user".to_string()));
+        assert!(create_ep
+            .aliases
+            .contains(&"repos/create-for-authenticated-user".to_string()));
     }
 
     #[test]
@@ -680,9 +671,17 @@ mod tests {
     fn test_filter() {
         let config = generate_config(SAMPLE_OPENAPI, Some("issues")).unwrap();
         // Only paths containing "issues" pass the filter
-        let repos_count = config.modules.get("repos").map(|m| m.commands.len()).unwrap_or(0);
+        let repos_count = config
+            .modules
+            .get("repos")
+            .map(|m| m.commands.len())
+            .unwrap_or(0);
         assert_eq!(repos_count, 0);
-        let issues_count = config.modules.get("issues").map(|m| m.commands.len()).unwrap_or(0);
+        let issues_count = config
+            .modules
+            .get("issues")
+            .map(|m| m.commands.len())
+            .unwrap_or(0);
         assert_eq!(issues_count, 1);
     }
 

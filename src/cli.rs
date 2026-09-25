@@ -104,8 +104,8 @@ pub fn distribute_params_with_config(
                 query_params.insert(name.clone(), value.clone());
             }
             "body" => {
-                let parsed: Value = serde_json::from_str(value)
-                    .unwrap_or(Value::String(value.clone()));
+                let parsed: Value =
+                    serde_json::from_str(value).unwrap_or(Value::String(value.clone()));
                 body_map.insert(name.clone(), parsed);
             }
             "header" => {
@@ -173,8 +173,7 @@ pub fn distribute_params_heuristic(
         if url_template.contains(&placeholder) {
             path_params.insert(name.clone(), value.clone());
         } else if name == "body" {
-            let parsed: Value = serde_json::from_str(value)
-                .unwrap_or(Value::String(value.clone()));
+            let parsed: Value = serde_json::from_str(value).unwrap_or(Value::String(value.clone()));
             body = Some(parsed);
         } else {
             query_params.insert(name.clone(), value.clone());
@@ -210,12 +209,36 @@ pub async fn execute(
     };
 
     match parts.method.as_str() {
-        "GET" => client.request_with_headers("GET", &parts.path, None, query, headers).await,
-        "POST" => client.request_with_headers("POST", &parts.path, parts.body, query, headers).await,
-        "PUT" => client.request_with_headers("PUT", &parts.path, parts.body, query, headers).await,
-        "PATCH" => client.request_with_headers("PATCH", &parts.path, parts.body, query, headers).await,
-        "DELETE" => client.request_with_headers("DELETE", &parts.path, None, query, headers).await,
-        _ => client.request_with_headers("GET", &parts.path, None, query, headers).await,
+        "GET" => {
+            client
+                .request_with_headers("GET", &parts.path, None, query, headers)
+                .await
+        }
+        "POST" => {
+            client
+                .request_with_headers("POST", &parts.path, parts.body, query, headers)
+                .await
+        }
+        "PUT" => {
+            client
+                .request_with_headers("PUT", &parts.path, parts.body, query, headers)
+                .await
+        }
+        "PATCH" => {
+            client
+                .request_with_headers("PATCH", &parts.path, parts.body, query, headers)
+                .await
+        }
+        "DELETE" => {
+            client
+                .request_with_headers("DELETE", &parts.path, None, query, headers)
+                .await
+        }
+        _ => {
+            client
+                .request_with_headers("GET", &parts.path, None, query, headers)
+                .await
+        }
     }
 }
 
@@ -292,15 +315,36 @@ mod tests {
             aliases: vec![],
             params: {
                 let mut m = std::collections::BTreeMap::new();
-                m.insert("owner".to_string(), ParamConfig {
-                    required: true, location: "path".to_string(), description: None, param_type: None, default: None,
-                });
-                m.insert("repo".to_string(), ParamConfig {
-                    required: true, location: "path".to_string(), description: None, param_type: None, default: None,
-                });
-                m.insert("title".to_string(), ParamConfig {
-                    required: true, location: "body".to_string(), description: None, param_type: None, default: None,
-                });
+                m.insert(
+                    "owner".to_string(),
+                    ParamConfig {
+                        required: true,
+                        location: "path".to_string(),
+                        description: None,
+                        param_type: None,
+                        default: None,
+                    },
+                );
+                m.insert(
+                    "repo".to_string(),
+                    ParamConfig {
+                        required: true,
+                        location: "path".to_string(),
+                        description: None,
+                        param_type: None,
+                        default: None,
+                    },
+                );
+                m.insert(
+                    "title".to_string(),
+                    ParamConfig {
+                        required: true,
+                        location: "body".to_string(),
+                        description: None,
+                        param_type: None,
+                        default: None,
+                    },
+                );
                 m
             },
         };
@@ -370,7 +414,10 @@ mod tests {
         ];
         let (filtered, _, site, _) = strip_control_flags(&args);
         assert_eq!(site.as_deref(), Some("github"));
-        assert_eq!(filtered, vec!["get".to_string(), "--owner".to_string(), "o".to_string()]);
+        assert_eq!(
+            filtered,
+            vec!["get".to_string(), "--owner".to_string(), "o".to_string()]
+        );
 
         // Equals form.
         let args: Vec<String> = vec![
@@ -400,12 +447,26 @@ mod tests {
             aliases: vec![],
             params: {
                 let mut m = std::collections::BTreeMap::new();
-                m.insert("x-request-id".to_string(), ParamConfig {
-                    required: true, location: "header".to_string(), description: None, param_type: None, default: None,
-                });
-                m.insert("page".to_string(), ParamConfig {
-                    required: false, location: "query".to_string(), description: None, param_type: None, default: None,
-                });
+                m.insert(
+                    "x-request-id".to_string(),
+                    ParamConfig {
+                        required: true,
+                        location: "header".to_string(),
+                        description: None,
+                        param_type: None,
+                        default: None,
+                    },
+                );
+                m.insert(
+                    "page".to_string(),
+                    ParamConfig {
+                        required: false,
+                        location: "query".to_string(),
+                        description: None,
+                        param_type: None,
+                        default: None,
+                    },
+                );
                 m
             },
         };
@@ -416,7 +477,10 @@ mod tests {
 
         let parts = distribute_params_with_config(&ep, &params).unwrap();
         // Header names are canonicalized to Title-Case.
-        assert_eq!(parts.headers.get("X-Request-Id"), Some(&"abc-123".to_string()));
+        assert_eq!(
+            parts.headers.get("X-Request-Id"),
+            Some(&"abc-123".to_string())
+        );
         assert_eq!(parts.query.get("page"), Some(&"2".to_string()));
         // Header params must NOT leak into query.
         assert!(!parts.query.contains_key("x-request-id"));
@@ -432,12 +496,26 @@ mod tests {
             aliases: vec![],
             params: {
                 let mut m = std::collections::BTreeMap::new();
-                m.insert("owner".to_string(), ParamConfig {
-                    required: true, location: "path".to_string(), description: None, param_type: None, default: None,
-                });
-                m.insert("repo".to_string(), ParamConfig {
-                    required: true, location: "path".to_string(), description: None, param_type: None, default: None,
-                });
+                m.insert(
+                    "owner".to_string(),
+                    ParamConfig {
+                        required: true,
+                        location: "path".to_string(),
+                        description: None,
+                        param_type: None,
+                        default: None,
+                    },
+                );
+                m.insert(
+                    "repo".to_string(),
+                    ParamConfig {
+                        required: true,
+                        location: "path".to_string(),
+                        description: None,
+                        param_type: None,
+                        default: None,
+                    },
+                );
                 m
             },
         };
@@ -447,7 +525,11 @@ mod tests {
         params.insert("repo".to_string(), "rust".to_string());
 
         let err = distribute_params_with_config(&ep, &params).unwrap_err();
-        assert!(err.contains("--owner"), "error should name owner, got: {}", err);
+        assert!(
+            err.contains("--owner"),
+            "error should name owner, got: {}",
+            err
+        );
     }
 
     #[test]
@@ -460,12 +542,26 @@ mod tests {
             aliases: vec![],
             params: {
                 let mut m = std::collections::BTreeMap::new();
-                m.insert("owner".to_string(), ParamConfig {
-                    required: true, location: "path".to_string(), description: None, param_type: None, default: None,
-                });
-                m.insert("repo".to_string(), ParamConfig {
-                    required: true, location: "path".to_string(), description: None, param_type: None, default: None,
-                });
+                m.insert(
+                    "owner".to_string(),
+                    ParamConfig {
+                        required: true,
+                        location: "path".to_string(),
+                        description: None,
+                        param_type: None,
+                        default: None,
+                    },
+                );
+                m.insert(
+                    "repo".to_string(),
+                    ParamConfig {
+                        required: true,
+                        location: "path".to_string(),
+                        description: None,
+                        param_type: None,
+                        default: None,
+                    },
+                );
                 m
             },
         };
@@ -477,7 +573,15 @@ mod tests {
         params.insert("repo".to_string(), "rust".to_string());
 
         let err = distribute_params_with_config(&ep, &params).unwrap_err();
-        assert!(err.contains("--owner"), "error should name owner, got: {}", err);
-        assert!(err.contains("empty"), "error should mention empty value, got: {}", err);
+        assert!(
+            err.contains("--owner"),
+            "error should name owner, got: {}",
+            err
+        );
+        assert!(
+            err.contains("empty"),
+            "error should mention empty value, got: {}",
+            err
+        );
     }
 }

@@ -167,17 +167,41 @@ async fn main() {
         Some(("POST", sub)) => {
             let path = sub.get_one::<String>("path").unwrap();
             let body = sub.get_one::<String>("body");
-            cmd_raw("POST", path, body.map(|s| s.as_str()), config_path, site, raw).await;
+            cmd_raw(
+                "POST",
+                path,
+                body.map(|s| s.as_str()),
+                config_path,
+                site,
+                raw,
+            )
+            .await;
         }
         Some(("PUT", sub)) => {
             let path = sub.get_one::<String>("path").unwrap();
             let body = sub.get_one::<String>("body");
-            cmd_raw("PUT", path, body.map(|s| s.as_str()), config_path, site, raw).await;
+            cmd_raw(
+                "PUT",
+                path,
+                body.map(|s| s.as_str()),
+                config_path,
+                site,
+                raw,
+            )
+            .await;
         }
         Some(("PATCH", sub)) => {
             let path = sub.get_one::<String>("path").unwrap();
             let body = sub.get_one::<String>("body");
-            cmd_raw("PATCH", path, body.map(|s| s.as_str()), config_path, site, raw).await;
+            cmd_raw(
+                "PATCH",
+                path,
+                body.map(|s| s.as_str()),
+                config_path,
+                site,
+                raw,
+            )
+            .await;
         }
         Some(("DELETE", sub)) => {
             let path = sub.get_one::<String>("path").unwrap();
@@ -197,7 +221,10 @@ async fn main() {
         Some((name, sub)) => {
             let args: Vec<String> = sub
                 .get_many::<std::ffi::OsString>("")
-                .map(|vals| vals.filter_map(|v| v.to_str().map(|s| s.to_string())).collect())
+                .map(|vals| {
+                    vals.filter_map(|v| v.to_str().map(|s| s.to_string()))
+                        .collect()
+                })
                 .unwrap_or_default();
             cmd_module(name, &args, config_path, site, raw).await;
         }
@@ -283,9 +310,7 @@ async fn cmd_generate(
             if !is_url && !is_file {
                 eprintln!("Error: unknown preset '{}'.", from);
                 if presets::effective_catalog().presets.is_empty() {
-                    eprintln!(
-                        "No preset catalog is available yet, so no presets exist to match."
-                    );
+                    eprintln!("No preset catalog is available yet, so no presets exist to match.");
                     eprintln!("Fetch one with 'restie presets update'.");
                 } else {
                     eprintln!("Run 'restie presets' to see available presets.");
@@ -378,23 +403,21 @@ async fn cmd_generate(
     }
 
     // Auto-name: preset name > --name > spec title
-    let site_name = name_override
-        .or(site_name_hint)
-        .unwrap_or_else(|| {
-            let title = config
-                .site
-                .as_ref()
-                .and_then(|s| s.name.as_deref())
-                .unwrap_or("site");
-            generator::site_name_to_filename(title)
-        });
+    let site_name = name_override.or(site_name_hint).unwrap_or_else(|| {
+        let title = config
+            .site
+            .as_ref()
+            .and_then(|s| s.name.as_deref())
+            .unwrap_or("site");
+        generator::site_name_to_filename(title)
+    });
 
     // Determine output path
     let out_path = output.unwrap_or_else(|| {
         let dir = SiteConfig::config_dir();
         dir.join(format!("{}.yaml", site_name))
-        .to_string_lossy()
-        .to_string()
+            .to_string_lossy()
+            .to_string()
     });
 
     // Refuse to write a useless empty config (e.g. spec URL returned an error page)
@@ -430,7 +453,10 @@ async fn cmd_generate(
 
     println!(
         "Generated {} (site: {}, {} modules, {} endpoints)",
-        out_path, site_name, config.modules.len(), total
+        out_path,
+        site_name,
+        config.modules.len(),
+        total
     );
 }
 
@@ -554,7 +580,11 @@ fn cmd_presets() {
     let mut w_env = "Env Variable".len();
     for p in &all {
         w_name = w_name.max(p.name.len());
-        let at = p.default_auth.as_ref().map(|a| a.auth_type.len()).unwrap_or(4);
+        let at = p
+            .default_auth
+            .as_ref()
+            .map(|a| a.auth_type.len())
+            .unwrap_or(4);
         w_auth = w_auth.max(at);
         let ev = preset_env_display(p.default_auth.as_ref()).len();
         w_env = w_env.max(ev);
@@ -562,25 +592,42 @@ fn cmd_presets() {
 
     let header = format!(
         "  {:<w1$} {:<w2$} {:<w3$} Description",
-        "Name", "Auth Type", "Env Variable",
-        w1 = w_name + 2, w2 = w_auth + 2, w3 = w_env + 2
+        "Name",
+        "Auth Type",
+        "Env Variable",
+        w1 = w_name + 2,
+        w2 = w_auth + 2,
+        w3 = w_env + 2
     );
     let sep = format!(
         "  {:<w1$} {:<w2$} {:<w3$} -----------",
-        "----", "---------", "------------",
-        w1 = w_name + 2, w2 = w_auth + 2, w3 = w_env + 2
+        "----",
+        "---------",
+        "------------",
+        w1 = w_name + 2,
+        w2 = w_auth + 2,
+        w3 = w_env + 2
     );
 
     println!("Available platform presets:\n");
     println!("{}", header);
     println!("{}", sep);
     for p in all {
-        let auth_type = p.default_auth.as_ref().map(|a| a.auth_type.as_str()).unwrap_or("none");
+        let auth_type = p
+            .default_auth
+            .as_ref()
+            .map(|a| a.auth_type.as_str())
+            .unwrap_or("none");
         let env_var = preset_env_display(p.default_auth.as_ref());
         println!(
             "  {:<w1$} {:<w2$} {:<w3$} {}",
-            p.name, auth_type, env_var, p.description,
-            w1 = w_name + 2, w2 = w_auth + 2, w3 = w_env + 2
+            p.name,
+            auth_type,
+            env_var,
+            p.description,
+            w1 = w_name + 2,
+            w2 = w_auth + 2,
+            w3 = w_env + 2
         );
     }
     println!("\nUsage:");
@@ -605,10 +652,7 @@ fn cmd_presets() {
 async fn cmd_presets_update(repo: Option<&str>) {
     match presets::update_from_repo(repo).await {
         Ok(summary) => {
-            println!(
-                "Updated presets from {}",
-                summary.catalog_url
-            );
+            println!("Updated presets from {}", summary.catalog_url);
             println!(
                 "  {} presets, {} signing script(s) staged in {}",
                 summary.preset_count,
@@ -641,12 +685,12 @@ fn cmd_site(sub: &clap::ArgMatches) {
             SiteConfig::clear_current_site();
             println!("Active site cleared. Fall back to auto-selection.");
         }
-        _ => {
-            match SiteConfig::active_site() {
-                Some(name) => println!("Active site: {}", name),
-                None => println!("No active site set. Pass --site <name> or use 'restie site set <name>'."),
+        _ => match SiteConfig::active_site() {
+            Some(name) => println!("Active site: {}", name),
+            None => {
+                println!("No active site set. Pass --site <name> or use 'restie site set <name>'.")
             }
-        }
+        },
     }
 }
 
@@ -664,7 +708,8 @@ async fn cmd_raw(
         None => HttpClient::with_base("https://api.github.com"),
     };
 
-    let body_val = body.map(|b| serde_json::from_str(b).unwrap_or(serde_json::Value::String(b.to_string())));
+    let body_val =
+        body.map(|b| serde_json::from_str(b).unwrap_or(serde_json::Value::String(b.to_string())));
 
     let result = match method {
         "GET" => client.GET(path, None).await,
@@ -816,7 +861,10 @@ async fn cmd_module(
             None => {
                 // Maybe the user typed a built-in subcommand by mistake (e.g. "preset" vs "presets")
                 if let Some(suggestion) = suggest_command(module) {
-                    eprintln!("Unknown command: '{}'. Did you mean '{}'?", module, suggestion);
+                    eprintln!(
+                        "Unknown command: '{}'. Did you mean '{}'?",
+                        module, suggestion
+                    );
                     eprintln!("Run 'restie presets' to see available platforms.");
                 } else {
                     println!("No config file found yet. Get started by generating a config:\n");
@@ -859,7 +907,10 @@ async fn cmd_module(
                 Ok(parts) => parts,
                 Err(e) => {
                     eprintln!("Error: {}", e);
-                    eprintln!("Run 'restie {} {} --help' to see required parameters.", module, command);
+                    eprintln!(
+                        "Run 'restie {} {} --help' to see required parameters.",
+                        module, command
+                    );
                     std::process::exit(1);
                 }
             }
@@ -918,7 +969,10 @@ fn output_result(result: Result<serde_json::Value, Box<dyn std::error::Error>>, 
             if raw {
                 println!("{}", value);
             } else {
-                println!("{}", serde_json::to_string_pretty(&value).unwrap_or(value.to_string()));
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&value).unwrap_or(value.to_string())
+                );
             }
         }
         Err(e) => {
@@ -930,7 +984,9 @@ fn output_result(result: Result<serde_json::Value, Box<dyn std::error::Error>>, 
 
 /// Suggest a correct built-in command for common typos.
 fn suggest_command(input: &str) -> Option<&'static str> {
-    let builtins = ["generate", "presets", "list", "sites", "GET", "POST", "PUT", "PATCH", "DELETE"];
+    let builtins = [
+        "generate", "presets", "list", "sites", "GET", "POST", "PUT", "PATCH", "DELETE",
+    ];
     let mut best: Option<(&str, usize)> = None;
 
     for name in builtins {
@@ -948,8 +1004,12 @@ fn levenshtein(a: &str, b: &str) -> usize {
     let a_chars: Vec<char> = a.chars().collect();
     let b_chars: Vec<char> = b.chars().collect();
     let (n, m) = (a_chars.len(), b_chars.len());
-    if n == 0 { return m; }
-    if m == 0 { return n; }
+    if n == 0 {
+        return m;
+    }
+    if m == 0 {
+        return n;
+    }
 
     let mut d = vec![vec![0; m + 1]; n + 1];
     for (i, row) in d.iter_mut().enumerate() {
@@ -961,12 +1021,15 @@ fn levenshtein(a: &str, b: &str) -> usize {
 
     for i in 1..=n {
         for j in 1..=m {
-            let cost = if a_chars[i-1] == b_chars[j-1] { 0 } else { 1 };
-            d[i][j] = *[
-                d[i-1][j] + 1,
-                d[i][j-1] + 1,
-                d[i-1][j-1] + cost,
-            ].iter().min().unwrap();
+            let cost = if a_chars[i - 1] == b_chars[j - 1] {
+                0
+            } else {
+                1
+            };
+            d[i][j] = *[d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost]
+                .iter()
+                .min()
+                .unwrap();
         }
     }
     d[n][m]

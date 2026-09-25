@@ -2,9 +2,9 @@
 // Integration Tests — HttpClient with auth injection
 // =============================================================================
 
+use mockito::{Matcher, Server};
 use restie::config::{AuthConfig, SiteConfig, SiteInfo};
 use restie::http_client::HttpClient;
-use mockito::{Matcher, Server};
 use serde_json::json;
 use std::collections::HashMap;
 
@@ -76,7 +76,9 @@ async fn test_post_with_body() {
         .await;
 
     let client = make_client(&server);
-    let result = client.POST("/create", Some(json!({"name": "test"})), None).await;
+    let result = client
+        .POST("/create", Some(json!({"name": "test"})), None)
+        .await;
 
     mock.assert_async().await;
     assert!(result.is_ok());
@@ -95,7 +97,9 @@ async fn test_put_method() {
         .await;
 
     let client = make_client(&server);
-    let result = client.PUT("/update/1", Some(json!({"active": true})), None).await;
+    let result = client
+        .PUT("/update/1", Some(json!({"active": true})), None)
+        .await;
 
     mock.assert_async().await;
     assert!(result.is_ok());
@@ -114,7 +118,9 @@ async fn test_patch_method() {
         .await;
 
     let client = make_client(&server);
-    let result = client.PATCH("/patch/1", Some(json!({"field": "val"})), None).await;
+    let result = client
+        .PATCH("/patch/1", Some(json!({"field": "val"})), None)
+        .await;
 
     mock.assert_async().await;
     assert!(result.is_ok());
@@ -240,5 +246,8 @@ async fn test_non_json_response() {
 
     mock.assert_async().await;
     assert!(result.is_ok());
-    assert_eq!(result.unwrap(), serde_json::Value::String("plain text".to_string()));
+    assert_eq!(
+        result.unwrap(),
+        serde_json::Value::String("plain text".to_string())
+    );
 }

@@ -32,9 +32,9 @@ pub struct AuthConfig {
     #[serde(rename = "type")]
     pub auth_type: String, // bearer_token | api_key | custom_header | script | none
     pub token_env: Option<String>,
-    pub header: Option<String>,    // default: Authorization
-    pub prefix: Option<String>,    // default: Bearer
-    pub command: Option<String>,   // for script type: path to auth script
+    pub header: Option<String>,  // default: Authorization
+    pub prefix: Option<String>,  // default: Bearer
+    pub command: Option<String>, // for script type: path to auth script
     #[serde(default)]
     pub env: Option<std::collections::BTreeMap<String, String>>, // env vars to pass to script
 }
@@ -188,7 +188,11 @@ impl SiteConfig {
                     .unwrap_or(0);
                 let mtime = std::fs::metadata(p)
                     .and_then(|m| m.modified())
-                    .map(|t| t.duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0))
+                    .map(|t| {
+                        t.duration_since(std::time::UNIX_EPOCH)
+                            .map(|d| d.as_millis())
+                            .unwrap_or(0)
+                    })
                     .unwrap_or(0);
                 let better = match &best {
                     Some((_, best_count, best_mtime)) => {
@@ -597,10 +601,7 @@ modules:
     fn test_site_config_path_both_extensions() {
         // Pure path lookup: prefers .yaml, falls back to .yml. Uses a temp
         // directory so the real ~/.config/restie is never touched.
-        let dir = std::env::temp_dir().join(format!(
-            "restie-config-test-{}",
-            std::process::id()
-        ));
+        let dir = std::env::temp_dir().join(format!("restie-config-test-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
 
         let name = "mysite";

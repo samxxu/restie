@@ -89,7 +89,9 @@ impl HttpClient {
         let mut req = self
             .http
             .request(
-                method.parse::<reqwest::Method>().unwrap_or(reqwest::Method::GET),
+                method
+                    .parse::<reqwest::Method>()
+                    .unwrap_or(reqwest::Method::GET),
                 url.clone(),
             )
             .header("User-Agent", USER_AGENT);
@@ -136,7 +138,11 @@ impl HttpClient {
                     // don't flood the terminal.
                     let trimmed = text.trim();
                     if trimmed.len() > 500 {
-                        format!("{}... (truncated, {} bytes total)", &trimmed[..500], trimmed.len())
+                        format!(
+                            "{}... (truncated, {} bytes total)",
+                            &trimmed[..500],
+                            trimmed.len()
+                        )
                     } else {
                         trimmed.to_string()
                     }

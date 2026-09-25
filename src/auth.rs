@@ -69,12 +69,18 @@ pub fn build_auth_headers(
         }
 
         "script" => {
-            let script_path = auth.command.as_deref().ok_or("auth.command not set for script type")?;
+            let script_path = auth
+                .command
+                .as_deref()
+                .ok_or("auth.command not set for script type")?;
             call_auth_script(script_path, auth, method, path, query, body)
         }
 
         _ => {
-            eprintln!("Warning: unknown auth type '{}', skipping auth", auth.auth_type);
+            eprintln!(
+                "Warning: unknown auth type '{}', skipping auth",
+                auth.auth_type
+            );
             Ok(AuthHeaders::new())
         }
     }
@@ -117,7 +123,9 @@ fn call_auth_script(
         if config_hit.is_file() {
             config_hit.to_string_lossy().to_string()
         } else {
-            let cache_hit = crate::config::SiteConfig::config_dir().join("presets").join(&script);
+            let cache_hit = crate::config::SiteConfig::config_dir()
+                .join("presets")
+                .join(&script);
             if cache_hit.is_file() {
                 cache_hit.to_string_lossy().to_string()
             } else {
@@ -155,7 +163,9 @@ fn call_auth_script(
         }
     }
 
-    let output = cmd.output().map_err(|e| format!("Failed to run auth script: {}", e))?;
+    let output = cmd
+        .output()
+        .map_err(|e| format!("Failed to run auth script: {}", e))?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -203,7 +213,8 @@ pub fn normalize_header_name(name: &str) -> String {
 /// Returns None if the path does not start with `~` or HOME is not set.
 fn expand_tilde(path: &str) -> Option<String> {
     let home = env::var("HOME").ok()?;
-    path.strip_prefix('~').map(|rest| format!("{}{}", home, rest))
+    path.strip_prefix('~')
+        .map(|rest| format!("{}{}", home, rest))
 }
 
 /// Expand ${VAR} references in a string using environment variables.
@@ -219,7 +230,12 @@ fn expand_env(s: &str) -> String {
                 );
                 String::new()
             });
-            result = format!("{}{}{}", &result[..start], value, &result[start + end + 1..]);
+            result = format!(
+                "{}{}{}",
+                &result[..start],
+                value,
+                &result[start + end + 1..]
+            );
         } else {
             break;
         }
@@ -270,7 +286,10 @@ mod tests {
         let mut auth = make_auth("bearer_token");
         auth.token_env = Some("TEST_TOKEN_A".to_string());
         let headers = build_auth_headers(Some(&auth), "GET", "/test", None, None).unwrap();
-        assert_eq!(headers.get("Authorization"), Some(&"Bearer my-token-123".to_string()));
+        assert_eq!(
+            headers.get("Authorization"),
+            Some(&"Bearer my-token-123".to_string())
+        );
     }
 
     #[test]
@@ -292,7 +311,10 @@ mod tests {
         auth.token_env = Some("TEST_TOKEN_C".to_string());
         auth.header = Some("PRIVATE-TOKEN".to_string());
         let headers = build_auth_headers(Some(&auth), "GET", "/test", None, None).unwrap();
-        assert_eq!(headers.get("PRIVATE-TOKEN"), Some(&"gitlab-token".to_string()));
+        assert_eq!(
+            headers.get("PRIVATE-TOKEN"),
+            Some(&"gitlab-token".to_string())
+        );
     }
 
     #[test]
@@ -309,9 +331,8 @@ mod tests {
     #[test]
     fn test_script_receives_context() {
         let mut auth = make_auth("script");
-        auth.command = Some(
-            "echo \"X-Method: $RESTIE_METHOD\"; echo \"X-Path: $RESTIE_PATH\"".to_string(),
-        );
+        auth.command =
+            Some("echo \"X-Method: $RESTIE_METHOD\"; echo \"X-Path: $RESTIE_PATH\"".to_string());
         let headers = build_auth_headers(Some(&auth), "POST", "/repos/test", None, None).unwrap();
         assert_eq!(headers.get("X-Method"), Some(&"POST".to_string()));
         assert_eq!(headers.get("X-Path"), Some(&"/repos/test".to_string()));
@@ -363,10 +384,7 @@ mod tests {
         // A bare relative auth.command like `auth/aliyun-sign.sh` must resolve
         // against ~/.config/restie/ (where bundled scripts install) regardless
         // of the caller's CWD, so raw-only sites work from any directory.
-        let home = std::env::temp_dir().join(format!(
-            "restie-auth-test-{}",
-            std::process::id()
-        ));
+        let home = std::env::temp_dir().join(format!("restie-auth-test-{}", std::process::id()));
         let auth_dir = home.join(".config/restie/auth");
         std::fs::create_dir_all(&auth_dir).unwrap();
         let script = auth_dir.join("authorizer.sh");
