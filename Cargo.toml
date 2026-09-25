@@ -9,6 +9,8 @@ homepage = "https://github.com/samxxu/restie"
 keywords = ["cli", "api", "openapi", "rest", "http"]
 categories = ["command-line-utilities", "api-bindings"]
 authors = ["Sam Xu <samxxu@gmail.com>"]
+readme = "README.md"
+rust-version = "1.75"
 
 [dependencies]
 # `socks` so a SOCKS proxy exported in the environment (ALL_PROXY / HTTPS_PROXY
